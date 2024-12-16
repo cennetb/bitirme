@@ -1,28 +1,96 @@
-import pandas as pd
-import numpy as np
 import os
-import cv2
+
 import matplotlib.pyplot as plt
-import warnings
+import numpy as np
+from keras import Model
+from keras.src.legacy.preprocessing.image import ImageDataGenerator
+from keras.src.utils import load_img, img_to_array
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Input, concatenate, Conv2DTranspose
 
-from tensorflow.keras.layers import Input, Lambda, Dense, Flatten, Dropout
-from tensorflow.keras.models import Model
-from tensorflow.keras.applications.vgg19 import VGG19
-from tensorflow.keras.applications.vgg19 import preprocess_input
-from tensorflow.keras.preprocessing import image, image_dataset_from_directory
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.models import Sequential
-from tensorflow import keras
-import tensorflow
+# Klasör yolları
+data_dir = './data'
+train_dir = os.path.join(data_dir, 'train')
+test_dir = os.path.join(data_dir, 'test')
+model_path = './bitirme/cilt_kanseri_tespit_modeli.keras'
 
+# Görsel boyutu
+IMG_SIZE = (256, 256, 1)
 
-import scipy
-print("Num GPUs Available: ", len(tensorflow.config.list_physical_devices('GPU')))
+# U-Net Modeli Tanımı
+def unet_model():
+    inputs = Input(IMG_SIZE)
 
+    c1 = Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+    c1 = Conv2D(64, (3, 3), activation='relu', padding='same')(c1)
+    p1 = MaxPooling2D((2, 2))(c1)
 
-# Set the seed value for experiment reproduci.bility.
-seed = 1842
-tensorflow.random.set_seed(seed)
-np.random.seed(seed)
-# Turn off warnings for cleaner looking notebook
-warnings.simplefilter('ignore')
+    c2 = Conv2D(128, (3, 3), activation='relu', padding='same')(p1)
+    c2 = Conv2D(128, (3, 3), activation='relu', padding='same')(c2)
+    p2 = MaxPooling2D((2, 2))(c2)
+
+    c3 = Conv2D(256, (3, 3), activation='relu', padding='same')(p2)
+    c3 = Conv2D(256, (3, 3), activation='relu', padding='same')(c3)
+    p3 = MaxPooling2D((2, 2))(c3)
+
+    u4 = Conv2DTranspose(256, (3, 3), strides=(2, 2), padding='same')(p3)
+    u4 = concatenate([u4, c3])
+    c4 = Conv2D(256, (3, 3), activation='relu', padding='same')(u4)
+    c4 = Conv2D(256, (3, 3), activation='relu', padding='same')(c4)
+
+    u5 = Conv2DTranspose(128, (3, 3), strides=(2, 2), padding='same')(c4)
+    u5 = concatenate([u5, c2])
+    c5 = Conv2D(128, (3, 3), activation='relu', padding='same')(u5)
+    c5 = Conv2D(128, (3, 3), activation='relu', padding='same')(c5)
+
+    u6 = Conv2DTranspose(64, (3, 3), strides=(2, 2), padding='same')(c5)
+    u6 = concatenate([u6, c1])
+    c6 = Conv2D(64, (3, 3), activation='relu', padding='same')(u6)
+    c6 = Conv2D(64, (3, 3), activation='relu', padding='same')(c6)
+
+    outputs = Conv2D(1, (1, 1), activation='sigmoid')(c6)
+
+    model = Model(inputs, outputs)
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+model = unet_model()
+
+# Veri yükleyici
+train_datagen = ImageDataGenerator(rescale=1./255)
+test_datagen = ImageDataGenerator(rescale=1./255)
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir, target_size=(256, 256), color_mode='grayscale', batch_size=32, class_mode='input')
+
+test_generator = test_datagen.flow_from_directory(
+    test_dir, target_size=(256, 256), color_mode='grayscale', batch_size=32, class_mode='input')
+
+# Model eğitimi ve tarihçesi
+history = model.fit(train_generator, epochs=5, validation_data=test_generator)
+
+# Modeli kaydet
+model.save(model_path)  # Modeli .keras formatında kaydet
+
+# Eğitim ve doğrulama doğruluğu grafiği
+plt.figure(figsize=(12, 6))
+
+# Doğruluk
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+# Kayıp
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
