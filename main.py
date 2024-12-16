@@ -94,3 +94,30 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
+
+# Test veri setinden bir görüntü al
+test_image_path = os.path.join(test_dir, './skin_cancer/skin_cancer_117.jpg')  # Örnek bir test görseli yolu
+img = load_img(test_image_path, target_size=(256, 256), color_mode='grayscale')  # Görüntüyü yükle
+img_array = img_to_array(img) / 255.0  # Görüntüyü numpy dizisine çevir ve normalize et
+img_array = np.expand_dims(img_array, axis=0)  # Model için uygun hale getirmek için boyutunu genişlet
+
+# Segmentasyonu tahmin et
+predicted_mask = model.predict(img_array)  # Modelin tahminini al
+
+# Segmentasyon maskesini (beyaz=kanserli alan, siyah=sağlıklı) görselleştir
+plt.figure(figsize=(12, 6))
+
+# Orijinal görüntü
+plt.subplot(1, 2, 1)
+plt.imshow(img, cmap='gray')
+plt.title('Original Image')
+plt.axis('off')
+
+# Segmentasyon maskesi
+plt.subplot(1, 2, 2)
+plt.imshow(predicted_mask[0], cmap='gray')  # predicted_mask[0] çünkü modelin çıktısı batch olarak gelir
+plt.title('Predicted Segmentation Mask')
+plt.axis('off')
+
+plt.tight_layout()
+plt.show()
