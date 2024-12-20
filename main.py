@@ -57,12 +57,17 @@ def unet_model():
     model = models.Model(inputs, outputs)
     return model
 
+# Modeli oluştur ve derle
 model = unet_model()
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.summary()
 
 # Modeli eğit
 history = model.fit(X_train, Y_train, epochs=3, validation_data=(X_test, Y_test), batch_size=8)
+
+# Modeli kaydet
+model.save('unet_model.keras')
+print("Model kaydedildi.")
 
 # Modeli test et
 def display_results(model, X_samples, threshold=0.4):
@@ -85,11 +90,6 @@ def display_results(model, X_samples, threshold=0.4):
 
     plt.show()
 
-# Sonuçları göster
-loss, accuracy = model.evaluate(X_test, Y_test)
-print(f"Test Kayıp: {loss:.4f}, Test Doğruluk: {accuracy:.4f}")
-
-display_results(model, X_test)
 # Sonuçları göster
 loss, accuracy = model.evaluate(X_test, Y_test)
 print(f"Test Kayıp: {loss:.4f}, Test Doğruluk: {accuracy:.4f}")
