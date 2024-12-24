@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 # Veri seti yolu
-data_dir = "C:/Users/ASUS/Desktop/bitirme/train/train/"
+data_dir = "data_cnn/train"
 categories = ["skin_cancer", "not_skin_cancer"]
 
 # Görselleri ve etiketleri saklamak için listeler
@@ -15,7 +15,7 @@ images = []
 labels = []
 
 # Örnek bir görseli kontrol etme
-image_path = "C:/Users/ASUS/Desktop/bitirme/train/train/skin_cancer/skin_cancer_117.jpg"
+image_path = "data_cnn/train/skin_cancer/skin_cancer_00.jpg"
 image = cv2.imread(image_path)
 if image is None:
     print(f"'{image_path}' yolundan görüntü yüklenemedi. Yol veya dosya adı hatalı olabilir.")
@@ -102,5 +102,5 @@ def tahmin_yap(image_path):
         return f"Hata oluştu: {e}"
 
 # Örnek tahmin
-sonuc = tahmin_yap("C:/Users/ASUS/Desktop/bitirme/train/train/skin_cancer/skin_cancer_118.jpg")
+sonuc = tahmin_yap("data_cnn/train/skin_cancer/skin_cancer_02.jpg")
 print(f"Tahmin edilen sınıf: {sonuc}")
